@@ -19,4 +19,6 @@ public class SimpleEntity {
     private BigDecimal amount;
     @Column
     private BigDecimal[] notExistsField;
+    @Column
+    private SimpleType type;
 }

@@ -30,8 +30,11 @@ public class BaseFieldMapper implements FieldMapper {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public FieldNameAndResultSetFunction<?> map(Field field) {
         Class<?> type = field.getType();
+        if (type.isEnum())
+            return (rs, name) -> Enum.valueOf((Class<Enum>) type, rs.getString(name));
         FieldNameAndResultSetFunction<?> func = MAP.get(type);
         if (Objects.nonNull(func))
             return func;

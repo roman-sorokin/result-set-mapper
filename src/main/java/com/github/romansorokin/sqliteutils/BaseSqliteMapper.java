@@ -48,6 +48,7 @@ class BaseSqliteMapper<T> implements SqliteMapper<T> {
             throw new IllegalArgumentException("field must have column annotation");
         if (!field.trySetAccessible())
             throw new IllegalArgumentException("field is not accessible: " + field);
+        field.setAccessible(true);
 
         Class<? extends FieldMapper> fieldMapperClass = column.fieldMapper();
         FieldMapper mapper = cache.get(fieldMapperClass);
@@ -107,7 +108,6 @@ class BaseSqliteMapper<T> implements SqliteMapper<T> {
     protected void mapField(T entity, ResultSet rs, MarkedField mf) throws SQLException, IllegalAccessException {
         Object mapFieldResult = mf.func.apply(rs, mf.columnName);
         Field field = mf.field;
-        field.setAccessible(true);
         field.set(entity, mapFieldResult);
     }
 }

@@ -17,6 +17,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Slf4j
 class SqliteUtilsTest extends BaseTest {
     @Test
+    void getMapper_executeQuery_enum() {
+        SqliteMapper<SimpleEntity> mapper = SqliteUtils.getMapper(SimpleEntity.class, SimpleEntity::new);
+        execute("drop table if exists simple_entity");
+        execute("create table if not exists simple_entity ( id text, remote_id integer, primitive integer, amount numeric, type string )");
+        execute("insert into simple_entity (id, remote_id, primitive, amount, type) values ('1', 2, 3, 4.5, 'TYPE1')");
+        SimpleEntity se = executeQuery("select * from simple_entity", mapper);
+        log.info("simple_entity: {}", se);
+        assertEquals("1", se.getId());
+        assertEquals(2L, se.getRemoteId());
+        assertEquals(3, se.getPrimitive());
+        assertEquals(new BigDecimal("4.5"), se.getAmount());
+        assertEquals(SimpleType.TYPE1, se.getType());
+    }
+
+    @Test
     void getMapper_executeQuery_set() {
         SqliteMapper<SimpleEntity> mapper = SqliteUtils.getMapper(SimpleEntity.class, SimpleEntity::new);
         execute("drop table if exists simple_entity");
