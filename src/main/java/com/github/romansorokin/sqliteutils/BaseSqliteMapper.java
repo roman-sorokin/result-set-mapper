@@ -76,9 +76,8 @@ class BaseSqliteMapper<T> implements SqliteMapper<T> {
     @Override
     public T map(ResultSet rs) throws SQLException, IllegalAccessException {
         T entity = entitySupplier.get();
-        if (rs instanceof ResultSetMetaData meta)
-            return mapFields(rs, meta, entity);
-        return mapFields(rs, entity);
+        ResultSetMetaData meta = rs.getMetaData();
+        return mapFields(rs, meta, entity);
     }
 
     protected T mapFields(ResultSet rs, ResultSetMetaData meta, T entity) throws SQLException, IllegalAccessException {
@@ -89,18 +88,6 @@ class BaseSqliteMapper<T> implements SqliteMapper<T> {
             if (Objects.isNull(markedField))
                 continue;
             mapField(entity, rs, markedField);
-        }
-        return entity;
-    }
-
-    protected T mapFields(ResultSet rs, T entity) throws IllegalAccessException {
-        for (Map.Entry<String, MarkedField> entry : markedFields.entrySet()) {
-            try {
-                MarkedField mf = entry.getValue();
-                mapField(entity, rs, mf);
-            } catch (SQLException e) {
-                /* doesn't matter :) */
-            }
         }
         return entity;
     }

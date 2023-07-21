@@ -6,10 +6,12 @@ import lombok.experimental.UtilityClass;
 
 import java.lang.annotation.Annotation;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,19 @@ public class SqliteUtils {
         } catch (Exception e) {
             throw new SqliteMapperRuntimeException("sqlite mapper", e);
         }
+    }
+
+    public static SqliteMapper<Map<String, Object>> getMapper() {
+        return rs -> {
+            ResultSetMetaData meta = rs.getMetaData();
+            int count = meta.getColumnCount();
+            if (count < 1)
+                return Collections.emptyMap();
+            HashMap<String, Object> map = new HashMap<>();
+            for (int i = 1; i < count + 1; i++)
+                map.put(meta.getColumnName(i), rs.getObject(i));
+            return map;
+        };
     }
 
     public static <T> Set<T> hashSet(ResultSet rs, SqliteMapper<T> mapper) throws SQLException, IllegalAccessException {
