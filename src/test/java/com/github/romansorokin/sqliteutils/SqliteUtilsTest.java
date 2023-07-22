@@ -8,6 +8,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,6 +18,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class SqliteUtilsTest extends BaseTest {
+    @Test
+    void getMapper_executeQuery_map() {
+        execute("drop table if exists simple_entity");
+        execute("create table if not exists simple_entity ( id text, remote_id integer, primitive integer, amount numeric, type string )");
+        execute("insert into simple_entity (id, remote_id, primitive, amount, type) values ('1', 2, 3, 4.5, 'TYPE1')");
+        Map<String, Object> result = executeQuery("select * from simple_entity", SqliteUtils.getDefaultMapper());
+        log.info("result: {}", result);
+        assertEquals("1", result.get("id"));
+        assertEquals(2, result.get("remote_id"));
+        assertEquals(3, result.get("primitive"));
+        assertEquals(4.5, result.get("amount"));
+        assertEquals(SimpleType.TYPE1.name(), result.get("type"));
+    }
+
     @Test
     void getMapper_executeQuery_enum() {
         SqliteMapper<SimpleEntity> mapper = SqliteUtils.getMapper(SimpleEntity.class, SimpleEntity::new);
@@ -42,7 +58,28 @@ class SqliteUtilsTest extends BaseTest {
         execute("insert into simple_entity (id, remote_id, primitive, amount) values ('4', 2, 3, 4.5)");
         execute("insert into simple_entity (id, remote_id, primitive, amount) values ('5', 2, 3, 4.5)");
 
-        Set<SimpleEntity> entities = executeQuery("select * from simple_entity", rs -> SqliteUtils.hashSet(rs, mapper));
+        Set<SimpleEntity> entities = executeQuery("select * from simple_entity", SqliteUtils.getSetMapper(mapper));
+        assertEquals(5, entities.size());
+        for (SimpleEntity se : entities) {
+            log.info("simple_entity: {}", se);
+            assertEquals(2L, se.getRemoteId());
+            assertEquals(3, se.getPrimitive());
+            assertEquals(new BigDecimal("4.5"), se.getAmount());
+        }
+    }
+
+    @Test
+    void getMapper_executeQuery_list() {
+        SqliteMapper<SimpleEntity> mapper = SqliteUtils.getMapper(SimpleEntity.class, SimpleEntity::new);
+        execute("drop table if exists simple_entity");
+        execute("create table if not exists simple_entity ( id text, remote_id integer, primitive integer, amount numeric )");
+        execute("insert into simple_entity (id, remote_id, primitive, amount) values ('1', 2, 3, 4.5)");
+        execute("insert into simple_entity (id, remote_id, primitive, amount) values ('2', 2, 3, 4.5)");
+        execute("insert into simple_entity (id, remote_id, primitive, amount) values ('3', 2, 3, 4.5)");
+        execute("insert into simple_entity (id, remote_id, primitive, amount) values ('4', 2, 3, 4.5)");
+        execute("insert into simple_entity (id, remote_id, primitive, amount) values ('5', 2, 3, 4.5)");
+
+        List<SimpleEntity> entities = executeQuery("select * from simple_entity", SqliteUtils.getListMapper(mapper));
         assertEquals(5, entities.size());
         for (SimpleEntity se : entities) {
             log.info("simple_entity: {}", se);

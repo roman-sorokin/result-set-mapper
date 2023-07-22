@@ -4,5 +4,5 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public interface SqliteMapper<T> {
-    T map(ResultSet rs) throws SQLException, IllegalAccessException;
+    T map(ResultSet rs) throws SQLException;
 }

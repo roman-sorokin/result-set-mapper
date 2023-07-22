@@ -1,6 +1,7 @@
 package com.github.romansorokin.sqliteutils;
 
 import com.github.romansorokin.sqliteutils.annotations.Column;
+import com.github.romansorokin.sqliteutils.exceptions.SqliteMapperRuntimeException;
 import com.github.romansorokin.sqliteutils.mapper.FieldMapper;
 import com.github.romansorokin.sqliteutils.mapper.FieldNameAndResultSetFunction;
 
@@ -74,13 +75,13 @@ class BaseSqliteMapper<T> implements SqliteMapper<T> {
     }
 
     @Override
-    public T map(ResultSet rs) throws SQLException, IllegalAccessException {
+    public T map(ResultSet rs) throws SQLException {
         T entity = entitySupplier.get();
         ResultSetMetaData meta = rs.getMetaData();
         return mapFields(rs, meta, entity);
     }
 
-    protected T mapFields(ResultSet rs, ResultSetMetaData meta, T entity) throws SQLException, IllegalAccessException {
+    protected T mapFields(ResultSet rs, ResultSetMetaData meta, T entity) throws SQLException {
         int count = meta.getColumnCount() + 1;
         for (int i = 1; i < count; i++) {
             String columnName = meta.getColumnName(i);
@@ -92,9 +93,14 @@ class BaseSqliteMapper<T> implements SqliteMapper<T> {
         return entity;
     }
 
-    protected void mapField(T entity, ResultSet rs, MarkedField mf) throws SQLException, IllegalAccessException {
+    protected void mapField(T entity, ResultSet rs, MarkedField mf) throws SQLException {
         Object mapFieldResult = mf.func.apply(rs, mf.columnName);
         Field field = mf.field;
-        field.set(entity, mapFieldResult);
+        try {
+            field.set(entity, mapFieldResult);
+        } catch (IllegalAccessException e) {
+            /* impossible :) */
+            throw new SqliteMapperRuntimeException("reflection, field set value", e);
+        }
     }
 }
