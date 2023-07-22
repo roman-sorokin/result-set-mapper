@@ -14,10 +14,36 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class SqliteUtilsTest extends BaseTest {
+    @Test
+    void getMapper_executeQuery_nullLongRemoteId() {
+        SqliteMapper<SimpleEntity> mapper = SqliteUtils.getMapper(SimpleEntity.class, SimpleEntity::new);
+        execute("drop table if exists simple_entity");
+        execute("create table if not exists simple_entity ( id text, remote_id integer, primitive integer, amount numeric, type string )");
+        execute("insert into simple_entity (id, primitive, amount, type) values ('1', 3, 4.5, 'TYPE1')");
+        SimpleEntity se = executeQuery("select * from simple_entity where type = 'TYPE1' ", mapper);
+        log.info("simple_entity: {}", se);
+        assertEquals("1", se.getId());
+        assertEquals(3, se.getPrimitive());
+        assertEquals(new BigDecimal("4.5"), se.getAmount());
+        assertEquals(SimpleType.TYPE1, se.getType());
+        assertNull(se.getRemoteId());
+    }
+
+    @Test
+    void getMapper_executeQuery_empty() {
+        SqliteMapper<SimpleEntity> mapper = SqliteUtils.getMapper(SimpleEntity.class, SimpleEntity::new);
+        execute("drop table if exists simple_entity");
+        execute("create table if not exists simple_entity ( id text, remote_id integer, primitive integer, amount numeric, type string )");
+        execute("insert into simple_entity (id, remote_id, primitive, amount, type) values ('1', 2, 3, 4.5, 'TYPE1')");
+        SimpleEntity se = executeQuery("select * from simple_entity where type = 'TYPE2' ", mapper);
+        assertNull(se);
+    }
+
     @Test
     void getMapper_executeQuery_map() {
         execute("drop table if exists simple_entity");

@@ -28,10 +28,10 @@ import java.util.stream.Collectors;
 @UtilityClass
 public class SqliteUtils {
     private static final SqliteMapper<Map<String, Object>> DEFAULT_MAPPER = rs -> {
+        if (!rs.next())
+            return null;
         ResultSetMetaData meta = rs.getMetaData();
         int count = meta.getColumnCount();
-        if (count < 1)
-            return Collections.emptyMap();
         HashMap<String, Object> map = new HashMap<>();
         for (int i = 1; i < count + 1; i++)
             map.put(meta.getColumnName(i), rs.getObject(i));
@@ -60,12 +60,14 @@ public class SqliteUtils {
 
     public static <T, C> SqliteMapper<C> getCollectionMapper(SqliteMapper<T> mapper, Supplier<C> collection, BiConsumer<C, T> accumulator, C onEmpty) {
         return rs -> {
-            if (!rs.next())
+            T result = mapper.map(rs);
+            if (Objects.isNull(result))
                 return onEmpty;
             C c = collection.get();
             do {
-                accumulator.accept(c, mapper.map(rs));
-            } while (rs.next());
+                accumulator.accept(c, result);
+                result = mapper.map(rs);
+            } while (Objects.nonNull(result));
             return c;
         };
     }

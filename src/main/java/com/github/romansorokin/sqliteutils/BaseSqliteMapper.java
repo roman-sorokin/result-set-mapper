@@ -76,15 +76,16 @@ class BaseSqliteMapper<T> implements SqliteMapper<T> {
 
     @Override
     public T map(ResultSet rs) throws SQLException {
-        T entity = entitySupplier.get();
-        ResultSetMetaData meta = rs.getMetaData();
-        return mapFields(rs, meta, entity);
-    }
+        if (!rs.next())
+            return null;
 
-    protected T mapFields(ResultSet rs, ResultSetMetaData meta, T entity) throws SQLException {
+        ResultSetMetaData meta = rs.getMetaData();
         int count = meta.getColumnCount() + 1;
+        T entity = entitySupplier.get();
         for (int i = 1; i < count; i++) {
             String columnName = meta.getColumnName(i);
+            if (Objects.isNull(rs.getObject(i))) // i don't know
+                continue;
             MarkedField markedField = markedFields.get(columnName);
             if (Objects.isNull(markedField))
                 continue;
