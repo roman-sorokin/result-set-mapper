@@ -1,4 +1,4 @@
 target/
 .idea/
 .mvn/
-src/test/resources/app.properties
+store/
