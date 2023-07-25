@@ -2,6 +2,7 @@ package com.github.romansorokin.resultset;
 
 import com.github.romansorokin.resultset.annotations.ResultSetField;
 import com.github.romansorokin.resultset.annotations.ResultSetType;
+import com.github.romansorokin.resultset.column.ResultSetFieldToColumnNameCase;
 import com.github.romansorokin.resultset.mapper.ResultSetMapper;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -128,4 +129,43 @@ class ResultSetMapperUtilsTest extends BaseTest {
         assertEquals("name-2", entity2.name2);
     }
 
+    @Test
+    void camelCaseToKebabCase() throws SQLException {
+        @ToString
+        @ResultSetType(mapAllFields = true, ignoreCase = true, naming = ResultSetFieldToColumnNameCase.KEBAB)
+        class TestEntity {
+            UUID entityId;
+            String entityName;
+        }
+        ResultSetMapper<TestEntity> mapper = ResultSetMapperUtils.getMapper(TestEntity.class, TestEntity::new);
+        execute("drop table if exists test_entity");
+        execute("create table if not exists test_entity (`entity-id` uuid, `entity-name` varchar)");
+
+        UUID id = UUID.randomUUID();
+        execute("insert into test_entity (`entity-id`, `entity-name`) values (?, ?)", id, "test-1");
+        TestEntity entity = executeQuery("select * from test_entity where `entity-id` = ? ", mapper, id).orElseThrow();
+        log.info("entity: {}", entity);
+        assertEquals(id, entity.entityId);
+        assertEquals("test-1", entity.entityName);
+    }
+
+    @Test
+    void camelCaseToSnakeCase() throws SQLException {
+        @ToString
+        @ResultSetType(mapAllFields = true, ignoreCase = true, naming = ResultSetFieldToColumnNameCase.SNAKE)
+        class TestEntity {
+            UUID entityId;
+            String entityName;
+        }
+        ResultSetMapper<TestEntity> mapper = ResultSetMapperUtils.getMapper(TestEntity.class, TestEntity::new);
+        execute("drop table if exists test_entity");
+        execute("create table if not exists test_entity (entity_id uuid, entity_name varchar)");
+
+        UUID id = UUID.randomUUID();
+        execute("insert into test_entity (entity_id, entity_name) values (?, ?)", id, "test-1");
+        TestEntity entity = executeQuery("select * from test_entity where entity_id = ? ", mapper, id).orElseThrow();
+        log.info("entity: {}", entity);
+        assertEquals(id, entity.entityId);
+        assertEquals("test-1", entity.entityName);
+    }
 }

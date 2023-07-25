@@ -18,7 +18,7 @@ public @interface ResultSetType {
      */
     Class<? extends ResultSetMapperFactory> factory() default BaseResultSetMapperFactory.class;
 
-    ResultSetFieldToColumnNameCase naming() default ResultSetFieldToColumnNameCase.CAMEL_FIELD_NAME;
+    ResultSetFieldToColumnNameCase naming() default ResultSetFieldToColumnNameCase.FIELD_NAME;
 
     boolean ignoreCase() default false;
 
