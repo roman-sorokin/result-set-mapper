@@ -4,14 +4,20 @@ import com.github.romansorokin.resultset.annotations.ResultSetField;
 import com.github.romansorokin.resultset.annotations.ResultSetType;
 import com.github.romansorokin.resultset.column.ResultSetFieldToColumnNameCase;
 import com.github.romansorokin.resultset.mapper.ResultSetMapper;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -167,5 +173,83 @@ class ResultSetMapperUtilsTest extends BaseTest {
         log.info("entity: {}", entity);
         assertEquals(id, entity.entityId);
         assertEquals("test-1", entity.entityName);
+    }
+
+    @Test
+    void getMapper_list() throws SQLException {
+        @ToString
+        @ResultSetType(ignoreCase = true)
+        class TestEntity {
+            @ResultSetField
+            UUID id;
+            @ResultSetField
+            String name;
+        }
+        ResultSetMapper<TestEntity> mapper = ResultSetMapperUtils.getMapper(TestEntity.class, TestEntity::new);
+        execute("drop table if exists test_entity");
+        execute("create table if not exists test_entity (id uuid, name varchar)");
+        execute("insert into test_entity (id, name) values (?, ?)", UUID.randomUUID(), "test-1");
+        execute("insert into test_entity (id, name) values (?, ?)", UUID.randomUUID(), "test-2");
+        execute("insert into test_entity (id, name) values (?, ?)", UUID.randomUUID(), "test-3");
+        execute("insert into test_entity (id, name) values (?, ?)", UUID.randomUUID(), "test-4");
+        List<TestEntity> entities = executeQuery("select * from test_entity ", ResultSetMapperUtils.getListMapper(mapper)).orElseThrow();
+        assertEquals(4, entities.size());
+
+        for (int i = 0; i < entities.size(); i++) {
+            TestEntity entity = entities.get(i);
+            log.info("entity: {}", entity);
+            assertNotNull(entity.id);
+            assertEquals("test-" + (i + 1), entity.name);
+        }
+    }
+
+    @Test
+    void getMapper_set() throws SQLException {
+        @ToString
+        @EqualsAndHashCode
+        @ResultSetType(ignoreCase = true)
+        class TestEntity {
+            @ResultSetField
+            UUID id;
+            @ResultSetField
+            String name;
+        }
+        ResultSetMapper<TestEntity> mapper = ResultSetMapperUtils.getMapper(TestEntity.class, TestEntity::new);
+        execute("drop table if exists test_entity");
+        execute("create table if not exists test_entity (id uuid, name varchar)");
+        execute("insert into test_entity (id, name) values (?, ?)", UUID.randomUUID(), "test-1");
+        execute("insert into test_entity (id, name) values (?, ?)", UUID.randomUUID(), "test-2");
+        execute("insert into test_entity (id, name) values (?, ?)", UUID.randomUUID(), "test-3");
+        execute("insert into test_entity (id, name) values (?, ?)", UUID.randomUUID(), "test-4");
+        Set<TestEntity> entities = executeQuery("select * from test_entity ", ResultSetMapperUtils.getSetMapper(mapper)).orElseThrow();
+        assertEquals(4, entities.size());
+        for (TestEntity entity : entities)
+            log.info("entity: {}", entity);
+        Set<String> names = entities.stream().map(a -> a.name).collect(Collectors.toSet());
+        assertTrue(names.contains("test-1"));
+        assertTrue(names.contains("test-2"));
+        assertTrue(names.contains("test-3"));
+        assertTrue(names.contains("test-4"));
+    }
+
+    @Test
+    void getMapper_map() throws SQLException {
+        @ToString
+        @ResultSetType(ignoreCase = true)
+        class TestEntity {
+            @ResultSetField
+            UUID id;
+            @ResultSetField
+            String name;
+        }
+        ResultSetMapper<TestEntity> mapper = ResultSetMapperUtils.getMapper(TestEntity.class, TestEntity::new);
+        execute("drop table if exists test_entity");
+        execute("create table if not exists test_entity (id uuid, name varchar)");
+        UUID id = UUID.randomUUID();
+        execute("insert into test_entity (`id`, `name`) values (?, ?)", id, "test-1");
+        Map<String, Object> entity = executeQuery("select * from test_entity ", ResultSetMapperUtils.TREE_MAP_IGNORE_CASE_MAPPER).orElseThrow();
+        log.info("entity: {}", entity);
+        assertEquals(id, entity.get("id"));
+        assertEquals("test-1", entity.get("name"));
     }
 }

@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,7 +25,8 @@ public abstract class BaseTest {
                 statement.setObject(i + 1, args[i]);
             ResultSet rs = statement.executeQuery();
             var result = mapper.map(rs);
-            printResultSet(rs);
+            if (result.isPresent() && !(result.get() instanceof Collection<?>))
+                printResultSet(rs);
             return result;
         }
     }
@@ -39,7 +41,8 @@ public abstract class BaseTest {
         try (Statement statement = connection.createStatement()) {
             ResultSet rs = statement.executeQuery(sql);
             var result = mapper.map(rs);
-            printResultSet(rs);
+            if (result.isPresent() && !(result.get() instanceof Collection<?>))
+                printResultSet(rs);
             return result;
         }
     }
